@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Symulator Drona 3D — Etap 2–5</title>
+  <!-- KaTeX for math formulas (same loading mechanism as presentation.html) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"
+    onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]});document.body.classList.add('math-ready');"></script>
+
+  <style>
+    :root {
+      --bg-color: #0b0d17;
+      --card-bg: rgba(22, 27, 46, 0.85);
+      --border-color: #2a3454;
+      --accent-cyan: #00d2ff;
+      --accent-blue: #3a7bd5;
+      --accent-green: #2ecc71;
+      --accent-orange: #f39c12;
+      --accent-red: #e74c3c;
+      --text-main: #f0f4f8;
+      --text-muted: #94a3b8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      overflow: hidden;
+      height: 100vh;
+    }
+
+    /* Fixed 16:9 stage (1280x720), scaled to the window by JS */
+    #presentation {
+      width: 1280px;
+      height: 720px;
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%) scale(var(--scale, 1));
+      background: radial-gradient(circle at top right, #1a2238 0%, #0b0d17 70%);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6), 0 0 40px rgba(0, 210, 255, 0.1);
+      overflow: hidden;
+    }
+
+    .slide {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      padding: 30px 48px 56px;
+      display: none;
+      flex-direction: column;
+      gap: 14px;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.4s ease, transform 0.4s ease;
+      overflow: hidden;
+    }
+    .slide.active { display: flex; opacity: 1; transform: translateY(0); }
+
+    .slide-header { flex: none; }
+    .slide-tag {
+      display: inline-block; font-size: 0.72em; text-transform: uppercase;
+      letter-spacing: 2px; color: var(--accent-cyan); font-weight: 700; margin-bottom: 4px;
+    }
+    h1 {
+      font-size: 2.5em; font-weight: 800; line-height: 1.15;
+      background: linear-gradient(90deg, #00d2ff, #3a7bd5);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      margin-bottom: 8px;
+    }
+    h2 { font-size: 1.55em; color: var(--text-main); font-weight: 700; line-height: 1.2; }
+    h3 { font-size: 1.02em; color: var(--accent-cyan); margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; flex: 1; min-height: 0; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; flex: 1; min-height: 0; }
+    .col { display: flex; flex-direction: column; gap: 12px; min-height: 0; }
+
+    .card {
+      background: var(--card-bg); border: 1px solid var(--border-color);
+      border-radius: 14px; padding: 16px 20px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+      display: flex; flex-direction: column; justify-content: flex-start; min-height: 0;
+    }
+    .card ul { list-style-type: none; }
+    .card li {
+      position: relative; padding-left: 20px; margin-bottom: 7px;
+      font-size: 0.88em; line-height: 1.42; color: #cbd5e1;
+    }
+    .card li::before { content: "▹"; position: absolute; left: 0; color: var(--accent-cyan); font-weight: bold; }
+    .card p { font-size: 0.88em; line-height: 1.45; color: #cbd5e1; }
+    .note { font-size: 0.8em !important; color: var(--text-muted) !important; margin-top: 6px; }
+
+    code {
+      background: rgba(0, 210, 255, 0.1); color: var(--accent-cyan);
+      padding: 1px 5px; border-radius: 4px;
+      font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.88em;
+    }
+
+    .math-block {
+      background: rgba(15, 23, 42, 0.8); border-left: 3px solid var(--accent-cyan);
+      padding: 4px 12px; margin: 6px 0; border-radius: 0 8px 8px 0; font-size: 0.88em;
+    }
+    .math-block .katex-display { margin: 0.35em 0; }
+    .cap { font-size: 0.8em; color: var(--text-muted); margin-top: 6px; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 0.8em; }
+    th, td { text-align: left; padding: 5px 8px; border-bottom: 1px solid var(--border-color); color: #cbd5e1; vertical-align: top; }
+    th { color: var(--accent-cyan); font-weight: 700; font-size: 0.92em; text-transform: uppercase; letter-spacing: 0.5px; }
+    td code { white-space: nowrap; }
+
+    .tree {
+      font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.78em;
+      line-height: 1.5; color: #cbd5e1; white-space: pre;
+    }
+    .tree b { color: var(--accent-cyan); font-weight: 600; }
+    .tree i { color: var(--text-muted); font-style: normal; }
+
+    .tag { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 0.75em; font-weight: 700; }
+    .tag.d { background: rgba(0, 210, 255, 0.15); color: var(--accent-cyan); }
+    .tag.m { background: rgba(243, 156, 18, 0.15); color: var(--accent-orange); }
+    .tag.s { background: rgba(46, 204, 113, 0.15); color: var(--accent-green); }
+
+    /* Screenshot slides */
+    .grid-shot-slide { display: grid; grid-template-columns: 1.7fr 1fr; gap: 22px; flex: 1; min-height: 0; }
+    .shot-slide-frame {
+      position: relative; background: #05070e; border: 2px dashed var(--border-color);
+      border-radius: 14px; overflow: hidden; display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    }
+    .shot-slide-frame .ph { color: var(--text-muted); font-size: 1.1em; font-weight: 600; letter-spacing: 1px; text-align: center; }
+    .shot-slide-frame .ph small { display: block; margin-top: 6px; font-size: 0.7em; font-weight: 400; opacity: 0.7; }
+    .shot-slide-frame img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #05070e; }
+
+    /* Architecture diagram */
+    .arch { flex: 1; min-height: 0; display: flex; }
+    .arch svg { width: 100%; height: 100%; }
+    .arch text { font-family: ui-monospace, Menlo, Consolas, monospace; fill: #e2e8f0; font-size: 13px; }
+    .arch .t { font-family: -apple-system, "Segoe UI", Arial, sans-serif; font-weight: 700; font-size: 14px; fill: #f0f4f8; }
+    .arch .s { font-size: 11px; fill: #94a3b8; }
+
+    /* HUD mock-up */
+    .hudmock { position: relative; flex: 1; min-height: 190px; background: #12304d; border: 1px solid var(--border-color); border-radius: 10px; overflow: hidden; }
+    .hudmock .tel { position: absolute; top: 8px; left: 8px; right: 130px; padding: 4px 6px; background: rgba(0,0,0,.6); border-radius: 8px; font-family: ui-monospace, Consolas, monospace; font-size: 10px; color: #3f6; line-height: 1.5; }
+    .hudmock .btns { position: absolute; top: 8px; right: 8px; display: flex; flex-direction: column; gap: 4px; width: 112px; }
+    .hudmock .btns span { font-size: 10px; text-align: center; padding: 4px 0; border-radius: 6px; color: #fff; font-weight: 600; }
+    .hudmock .stick { position: absolute; bottom: 8px; width: 70px; height: 70px; border-radius: 50%; border: 2px solid rgba(255,255,255,.45); background: rgba(0,0,0,.35); display: flex; align-items: center; justify-content: center; }
+    .hudmock .stick::after { content: ""; width: 30px; height: 30px; border-radius: 50%; background: rgba(26,188,156,.9); border: 2px solid #fff; }
+    .hudmock .lbl { position: absolute; bottom: 0; font-size: 8px; color: #ddd; font-weight: 700; letter-spacing: 1px; }
+
+    /* Footer controls */
+    .controls { position: absolute; bottom: 14px; right: 26px; display: flex; align-items: center; gap: 10px; z-index: 100; }
+    .btn {
+      background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-main);
+      padding: 6px 14px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.8em; transition: all 0.2s ease;
+    }
+    .btn:hover { background: var(--accent-blue); border-color: var(--accent-blue); color: #fff; }
+    .btn:disabled { opacity: .4; cursor: default; }
+    .slide-counter { font-size: 0.82em; color: var(--text-muted); font-weight: 600; margin-right: 6px; }
+
+    @page { size: 16in 9in landscape; margin: 0; }
+    @media print {
+      html, body { width: 16in; height: auto; margin: 0; padding: 0; overflow: visible; background: #0b0d17 !important;
+        -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      #presentation { position: static; transform: none; width: 1280px; height: auto; border: none; box-shadow: none;
+        overflow: visible; background: none; border-radius: 0; zoom: 1.2; }
+      .slide { position: relative; display: flex !important; opacity: 1 !important; transform: none !important;
+        width: 1280px; height: 720px; page-break-after: always; break-after: page;
+        background: radial-gradient(circle at top right, #1a2238 0%, #0b0d17 70%) !important;
+        -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .slide:last-of-type { page-break-after: avoid; break-after: avoid; }
+      .controls { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+<div id="presentation">
+
+  <!-- ═════ 1. Tytułowy ═════ -->
+  <div class="slide active" id="slide-1">
+    <div class="slide-header">
+      <span class="slide-tag">Grafika Komputerowa i Komunikacja Człowiek-Komputer • Etapy 2–5</span>
+      <h1>Symulator Drona 3D</h1>
+      <h2>Etap 2–5: Sterowanie 6-DOF, Model 3D, Kamery TPS/FPV oraz Środowisko</h2>
+    </div>
+    <div class="grid-2" style="margin-top: 10px; flex: none;">
+      <div class="card" style="border-left: 4px solid var(--accent-cyan);">
+        <h3>👨‍💻 Danylo Mikhnytskyi (284125)</h3>
+        <ul>
+          <li>Fizyka 6-DOF (<code>physics.ts</code>), model 3D drona</li>
+          <li>Środowisko, renderery <code>Scene.tsx</code> / <code>Scene.web.tsx</code></li>
+        </ul>
+      </div>
+      <div class="card" style="border-left: 4px solid var(--accent-orange);">
+        <h3>👨‍💻 Maksym Mahaz (284115)</h3>
+        <ul>
+          <li>Wirtualne joysticki 2D, HUD, store (Zustand)</li>
+          <li>System kamer TPS / FPV (<code>cameraRig.ts</code>)</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card" style="flex: none;">
+      <h3>🧱 Stos technologiczny (z <code>package.json</code>)</h3>
+      <p>Expo <code>~58.0.0</code> • React Native <code>0.88.0</code> • React <code>19.3.0</code> • Three.js <code>~0.175.0</code> • expo-gl <code>~58.0.3</code> • Zustand <code>~5.0.0</code> • react-native-web <code>^0.21.4</code> • TypeScript <code>~5.8.0</code></p>
+    </div>
+    <div style="margin-top: auto; display: flex; justify-content: space-between; padding-top: 10px; border-top: 1px solid var(--border-color);">
+      <span style="color: var(--text-muted); font-size: 0.85em;">Projekt Zespołowy • Etapy 2–5 (po Etapie 1: commit <code>ec26f09</code>)</span>
+      <span style="color: var(--accent-green); font-size: 0.85em; font-weight: 600;">Czysty Three.js + Zustand (bez React Three Fiber)</span>
+    </div>
+  </div>
+
+  <!-- ═════ 2. Co się zmieniło ═════ -->
+  <div class="slide" id="slide-2">
+    <div class="slide-header">
+      <span class="slide-tag">Przegląd zmian</span>
+      <h2>Co się zmieniło względem Etapu 1</h2>
+    </div>
+    <div class="card" style="flex: none;">
+      <table>
+        <tr><th style="width:20%">Obszar</th><th style="width:36%">Etap 1</th><th>Etapy 2–5</th></tr>
+        <tr><td>Dynamika</td><td>1D: wysokość + prędkość pionowa</td><td>6-DOF: pozycja 3D, pochylenie, przechylenie, odchylenie</td></tr>
+        <tr><td>Sterowanie</td><td>Przyciski <code>−10 %</code>, <code>+10 %</code>, Hover, Cut Off</td><td>Dwa wirtualne joysticki (Mode 2) + Hover Lock</td></tr>
+        <tr><td>Kod sceny</td><td><code>Scene.tsx</code> (226 l.) i <code>Scene.web.tsx</code> (233 l.) z powielonym kodem</td><td>Wspólne <code>src/core/</code>; <code>Scene.tsx</code> 147 l., <code>Scene.web.tsx</code> 95 l.</td></tr>
+        <tr><td>Model drona</td><td><code>DroneCube.tsx</code> (kostka)</td><td>Proceduralny quadkopter z wirującymi śmigłami</td></tr>
+        <tr><td>Kamera</td><td>Lerp wysokości, stała pozycja X/Z</td><td>TPS (za dronem, wg odchylenia) i FPV</td></tr>
+        <tr><td>Zależności</td><td>R3F: <code>@react-three/fiber</code></td><td>Usunięto R3F, <code>CameraController</code>, <code>CrossCanvas*</code>, <code>DroneCube</code></td></tr>
+        <tr><td>Orientacja (<code>app.json</code>)</td><td><code>portrait</code></td><td><code>landscape</code></td></tr>
+      </table>
+    </div>
+    <div class="grid-3" style="flex: none;">
+      <div class="card"><h3>📊 Diff vs <code>ec26f09</code></h3><p>12 plików zmienionych: <b style="color:var(--accent-green)">+259</b> / <b style="color:var(--accent-red)">−752</b> linii (w tym <code>package-lock.json</code>: +3 / −170)</p></div>
+      <div class="card"><h3>🆕 Nowe pliki</h3><p>8 plików (7 w <code>src/core/</code> + <code>VirtualJoystick.tsx</code>): <b style="color:var(--accent-green)">+1201</b> linii</p></div>
+      <div class="card"><h3>🗑️ Usunięte</h3><p>4 pliki: <code>CameraController</code>, <code>CrossCanvas</code>, <code>CrossCanvas.web</code>, <code>DroneCube</code></p></div>
+    </div>
+    <p class="note" style="margin-top:-4px;">Zmiany nie są jeszcze zacommitowane — porównanie drzewa roboczego z <code>ec26f09</code>.</p>
+  </div>
+
+  <!-- ═════ 3. Architektura ═════ -->
+  <div class="slide" id="slide-3">
+    <div class="slide-header">
+      <span class="slide-tag">Architektura</span>
+      <h2>Struktura końcowa (na podstawie rzeczywistych importów)</h2>
+    </div>
+    <div class="arch">
+      <svg viewBox="0 0 1180 500" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#00d2ff"/></marker>
+          <marker id="ar2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#f39c12"/></marker>
+        </defs>
+        <!-- App -->
+        <rect x="440" y="5" width="300" height="46" rx="10" fill="#161b2e" stroke="#3a7bd5"/>
+        <text class="t" x="590" y="26" text-anchor="middle">App.tsx</text>
+        <text class="s" x="590" y="42" text-anchor="middle">montuje &lt;Scene/&gt; + &lt;HUD/&gt;</text>
+        <line x1="500" y1="51" x2="270" y2="105" stroke="#00d2ff" stroke-width="1.6" marker-end="url(#ar)"/>
+        <line x1="680" y1="51" x2="905" y2="105" stroke="#f39c12" stroke-width="1.6" marker-end="url(#ar2)"/>
+
+        <!-- Scenes -->
+        <rect x="60" y="105" width="420" height="68" rx="10" fill="#161b2e" stroke="#00d2ff"/>
+        <text class="t" x="270" y="128" text-anchor="middle">Scene.tsx (expo-gl)  |  Scene.web.tsx</text>
+        <text class="s" x="270" y="146" text-anchor="middle">tylko renderer + pętla requestAnimationFrame</text>
+        <text class="s" x="270" y="162" text-anchor="middle">Danylo</text>
+
+        <!-- HUD -->
+        <rect x="700" y="105" width="420" height="68" rx="10" fill="#161b2e" stroke="#f39c12"/>
+        <text class="t" x="910" y="128" text-anchor="middle">HUD.tsx  →  VirtualJoystick.tsx</text>
+        <text class="s" x="910" y="146" text-anchor="middle">telemetria, przyciski, 2 joysticki</text>
+        <text class="s" x="910" y="162" text-anchor="middle">Maksym</text>
+
+        <!-- simulation -->
+        <rect x="60" y="225" width="420" height="52" rx="10" fill="#161b2e" stroke="#2ecc71"/>
+        <text class="t" x="270" y="248" text-anchor="middle">core/simulation.ts  (createSimulation)</text>
+        <text class="s" x="270" y="266" text-anchor="middle">scena + step(dt): fizyka, model, kamera, telemetria</text>
+        <line x1="270" y1="173" x2="270" y2="225" stroke="#00d2ff" stroke-width="1.6" marker-end="url(#ar)"/>
+
+        <!-- core modules -->
+        <rect x="20" y="340" width="130" height="62" rx="10" fill="#161b2e" stroke="#2a3454"/>
+        <text class="t" x="85" y="362" text-anchor="middle">physics.ts</text><text class="s" x="85" y="380" text-anchor="middle">stepPhysics</text><text class="s" x="85" y="394" text-anchor="middle">Danylo</text>
+        <rect x="165" y="340" width="130" height="62" rx="10" fill="#161b2e" stroke="#2a3454"/>
+        <text class="t" x="230" y="362" text-anchor="middle">droneModel.ts</text><text class="s" x="230" y="380" text-anchor="middle">model + śmigła</text><text class="s" x="230" y="394" text-anchor="middle">Danylo</text>
+        <rect x="310" y="340" width="130" height="62" rx="10" fill="#161b2e" stroke="#2a3454"/>
+        <text class="t" x="375" y="362" text-anchor="middle">environment.ts</text><text class="s" x="375" y="380" text-anchor="middle">niebo, teren, tor</text><text class="s" x="375" y="394" text-anchor="middle">Danylo</text>
+        <rect x="455" y="340" width="130" height="62" rx="10" fill="#161b2e" stroke="#f39c12"/>
+        <text class="t" x="520" y="362" text-anchor="middle">cameraRig.ts</text><text class="s" x="520" y="380" text-anchor="middle">TPS / FPV</text><text class="s" x="520" y="394" text-anchor="middle">Maksym</text>
+        <line x1="200" y1="277" x2="85" y2="340" stroke="#2ecc71" marker-end="url(#ar)"/>
+        <line x1="240" y1="277" x2="230" y2="340" stroke="#2ecc71" marker-end="url(#ar)"/>
+        <line x1="300" y1="277" x2="375" y2="340" stroke="#2ecc71" marker-end="url(#ar)"/>
+        <line x1="360" y1="277" x2="500" y2="340" stroke="#2ecc71" marker-end="url(#ar)"/>
+
+        <!-- constants -->
+        <rect x="20" y="440" width="565" height="42" rx="10" fill="#161b2e" stroke="#2a3454" stroke-dasharray="5 4"/>
+        <text class="t" x="302" y="466" text-anchor="middle">core/constants.ts — wspólne stałe (wszystkie moduły core)</text>
+
+        <!-- store -->
+        <rect x="700" y="260" width="420" height="78" rx="10" fill="#161b2e" stroke="#f39c12" stroke-width="2"/>
+        <text class="t" x="910" y="284" text-anchor="middle">store/useDroneStore.ts (Zustand)</text>
+        <text class="s" x="910" y="303" text-anchor="middle">wejścia: throttle, yawInput, pitchInput, rollInput</text>
+        <text class="s" x="910" y="319" text-anchor="middle">tryby: hoverLock, cameraMode, resetNonce • telemetria</text>
+        <line x1="910" y1="173" x2="910" y2="260" stroke="#f39c12" stroke-width="1.6" marker-end="url(#ar2)"/>
+        <text class="s" x="920" y="215">akcje setLeftStick / setRightStick</text>
+
+        <!-- loop to store -->
+        <path d="M480 251 H590 V299 H700" fill="none" stroke="#2ecc71" stroke-width="1.6" marker-end="url(#ar)" stroke-dasharray="6 3"/>
+        <text class="s" x="600" y="240">getState() co klatkę</text>
+        <text class="s" x="705" y="360">updateTelemetry() — 15 Hz → HUD (useShallow)</text>
+      </svg>
+    </div>
+  </div>
+
+  <!-- ═════ 4. Podział pracy ═════ -->
+  <div class="slide" id="slide-4">
+    <div class="slide-header">
+      <span class="slide-tag">Organizacja zespołu</span>
+      <h2>Podział pracy (50/50) — wg nagłówków plików</h2>
+    </div>
+    <div class="grid-2" style="flex: none;">
+      <div class="card" style="border-left: 4px solid var(--accent-cyan);">
+        <h3>Danylo Mikhnytskyi (284125) — 6 plików, 912 l.</h3>
+        <ul>
+          <li><code>core/physics.ts</code> — model lotu 6-DOF (151 l.)</li>
+          <li><code>core/droneModel.ts</code> — model 3D i śmigła (159 l.)</li>
+          <li><code>core/environment.ts</code> — środowisko (326 l.)</li>
+          <li><code>core/disposeScene.ts</code> (34 l.)</li>
+          <li><code>Scene.tsx</code> (147 l.), <code>Scene.web.tsx</code> (95 l.)</li>
+        </ul>
+      </div>
+      <div class="card" style="border-left: 4px solid var(--accent-orange);">
+        <h3>Maksym Mahaz (284115) — 4 pliki, 583 l.</h3>
+        <ul>
+          <li><code>VirtualJoystick.tsx</code> — dwa joysticki (274 l.)</li>
+          <li><code>HUD.tsx</code> — telemetria i przyciski (139 l.)</li>
+          <li><code>store/useDroneStore.ts</code> — Zustand (98 l.)</li>
+          <li><code>core/cameraRig.ts</code> — TPS/FPV (72 l.)</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card" style="border-left: 4px solid var(--accent-green); flex: none;">
+      <h3>🤝 Pliki wspólne (oba nazwiska w nagłówku)</h3>
+      <ul>
+        <li><code>core/constants.ts</code> (71 l.) — wszystkie parametry symulacji w jednym miejscu</li>
+        <li><code>core/simulation.ts</code> (114 l.) — wspólna konfiguracja sceny i aktualizacja klatki, łączy moduły obu autorów</li>
+        <li><code>App.tsx</code> (63 l.) — punkt wejścia (nagłówek opisuje podział ról)</li>
+      </ul>
+    </div>
+    <p class="note">Podział „50/50" dotyczy zakresu odpowiedzialności (silnik/fizyka/świat vs. interakcja/stan/kamera), nie liczby linii. Atrybucja pochodzi z komentarzy w plikach — historia git zawiera tylko jeden commit (Etap 1).</p>
+  </div>
+
+  <!-- ═════ 5. Fizyka: model ═════ -->
+  <div class="slide" id="slide-5">
+    <div class="slide-header">
+      <span class="slide-tag">Część 1 — Danylo Mikhnytskyi (284125) • <code>physics.ts</code></span>
+      <h2>Fizyka 6-DOF: postawa i ruch pionowy</h2>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <h3>🎚️ Postawa (pochylenie θ, przechylenie φ, odchylenie ψ)</h3>
+        <p>Wygładzanie wykładnicze do zadanej wartości (niezależne od liczby klatek):</p>
+        <div class="math-block">
+          $$\theta^{*}=u_p\,\theta_{\max},\quad \varphi^{*}=u_r\,\theta_{\max}$$
+          $$\theta \leftarrow \theta+(\theta^{*}-\theta)\,\bigl(1-e^{-k\,\Delta t}\bigr)$$
+          $$\psi \leftarrow \psi-u_y\,\omega_\psi\,\Delta t$$
+        </div>
+        <p class="note">$u_p,u_r,u_y\in[-1,1]$ • $\theta_{\max}=30^\circ$ • $k=6\ \mathrm{s^{-1}}$ • $\omega_\psi=120^\circ/\mathrm{s}$. Na ziemi bez ciągu (<code>restingOnGround</code>) wszystko jest zerowane.</p>
+      </div>
+      <div class="card">
+        <h3>⬆️ Ruch pionowy</h3>
+        <div class="math-block">
+          $$a_y=T\cdot T_{\max}-g,\quad v_y\leftarrow\min\bigl(v_y+a_y\Delta t,\ 15\bigr)$$
+        </div>
+        <p>$T\in[0,1]$, $T_{\max}=19.62$, $g=9.81\ \mathrm{m/s^2}$ → przy $T=0.5$ zawis ($a_y=0$).</p>
+        <p style="margin-top:8px;">Hover Lock aktywny i drążek w środku ($|T-0.5|<0.01$): tłumienie prędkości pionowej</p>
+        <div class="math-block">
+          $$v_y\leftarrow v_y+(0-v_y)\,\bigl(1-e^{-10\,\Delta t}\bigr)$$
+        </div>
+        <p class="note">Brak dolnego limitu prędkości opadania; krok czasu przycięty do $\Delta t\le 0{,}05\ \mathrm{s}$.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═════ 6. Fizyka: poziom + stałe ═════ -->
+  <div class="slide" id="slide-6">
+    <div class="slide-header">
+      <span class="slide-tag">Część 1 — Danylo Mikhnytskyi (284125) • <code>physics.ts</code>, <code>constants.ts</code></span>
+      <h2>Ciąg poziomy, opór powietrza i stałe</h2>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <h3>➡️ Rzutowanie ciągu na wektory kierunku</h3>
+        <div class="math-block">
+          $$a_f=G\,g\tan\theta,\qquad a_r=G\,g\tan\varphi,\qquad G=1.5$$
+          $$a_x=-\sin\psi\,a_f+\cos\psi\,a_r-c\,v_x$$
+          $$a_z=-\cos\psi\,a_f-\sin\psi\,a_r-c\,v_z$$
+        </div>
+        <p class="note">Przód $=(-\sin\psi,0,-\cos\psi)$, prawo $=(\cos\psi,0,-\sin\psi)$, opór liniowy $c=0.7\ \mathrm{s^{-1}}$. Całkowanie jawne Eulera: $v\leftarrow v+a\Delta t$, $p\leftarrow p+v\Delta t$.</p>
+        <div class="math-block">
+          $$\|v_h\|>15\ \Rightarrow\ v_h\leftarrow v_h\,\tfrac{15}{\|v_h\|}$$
+        </div>
+        <ul style="margin-top:6px;">
+          <li><b>Podłoże:</b> $y\ge 0.2$ m, $v_y\ge0$ przy kontakcie; <b>pułap:</b> $y\le 500$ m</li>
+          <li>Ciąg ≤ 0,5 przy ziemi → $v=0$ (dron stoi)</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>📋 Stała → wartość → znaczenie</h3>
+        <table>
+          <tr><th>Stała</th><th>Wartość</th><th>Znaczenie</th></tr>
+          <tr><td><code>GRAVITY</code></td><td>9,81 m/s²</td><td>grawitacja</td></tr>
+          <tr><td><code>MAX_THRUST</code></td><td>19,62 m/s²</td><td>ciąg przy T=1 (2·g)</td></tr>
+          <tr><td><code>MAX_TILT</code></td><td>30°</td><td>maks. pochylenie/przechylenie</td></tr>
+          <tr><td><code>TILT_RESPONSE</code></td><td>6 s⁻¹</td><td>szybkość śledzenia kąta</td></tr>
+          <tr><td><code>YAW_RATE</code></td><td>120°/s</td><td>prędkość odchylania</td></tr>
+          <tr><td><code>HORIZONTAL_ACCEL_GAIN</code></td><td>1,5</td><td>mnożnik g·tan(kąt)</td></tr>
+          <tr><td><code>DRAG</code></td><td>0,7 s⁻¹</td><td>opór powietrza</td></tr>
+          <tr><td><code>MAX_HORIZONTAL_SPEED</code></td><td>15 m/s</td><td>limit prędkości poziomej</td></tr>
+          <tr><td><code>MAX_CLIMB_SPEED</code></td><td>15 m/s</td><td>limit wznoszenia</td></tr>
+          <tr><td><code>HOVER_DAMPING</code></td><td>10 s⁻¹</td><td>tłumienie w Hover Lock</td></tr>
+          <tr><td><code>GROUND_Y</code> / <code>MAX_ALTITUDE</code></td><td>0,2 / 500 m</td><td>poziom gruntu / pułap</td></tr>
+          <tr><td><code>MAX_DT</code></td><td>0,05 s</td><td>maks. krok fizyki</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═════ 7. Model 3D ═════ -->
+  <div class="slide" id="slide-7">
+    <div class="slide-header">
+      <span class="slide-tag">Część 1 — Danylo Mikhnytskyi (284125) • <code>droneModel.ts</code></span>
+      <h2>Model 3D: graf sceny quadkoptera</h2>
+    </div>
+    <div class="grid-2" style="grid-template-columns: 1.25fr 1fr;">
+      <div class="card">
+        <h3>🌳 Graf sceny (jedna grupa, 31 siatek)</h3>
+<div class="tree"><b>Group "drone"</b>
+├─ Mesh <b>body</b>      Box 0.2×0.09×0.42
+├─ Mesh <b>canopy</b>, <b>battery</b>
+├─ Mesh <b>camHousing</b>, <b>lens</b>   <i>// z = −0.23 / −0.275 (przód = −Z)</i>
+├─ ×4 narożniki (±0.3, ±0.3):
+│   ├─ Mesh <b>arm</b>     Box, obrót y = atan2(x, z)
+│   ├─ Mesh <b>motor</b>   Cylinder
+│   ├─ Mesh <b>led</b>     Sphere <i>// zielona z przodu, czerwona z tyłu</i>
+│   └─ Group <b>rotor</b>  <i>// userData.spinDir = ±1</i>
+│       ├─ Mesh blade  Box 0.3×0.006×0.028
+│       └─ Mesh hub    Cylinder
+└─ <b>skids</b> ×2 + <b>struts</b> ×4   <i>// płozy lądowania</i></div>
+        <p class="note">Hierarchia jest płaska: ramiona, silniki i LED-y to bezpośrednie dzieci grupy; zagnieżdżone są tylko łopaty w <code>rotor</code>.</p>
+      </div>
+      <div class="col">
+        <div class="card">
+          <h3>🌀 Obrót śmigieł</h3>
+          <div class="math-block">
+            $$\Delta\alpha_i=s_i\,(\omega_0+T\,\omega_1)\,\Delta t$$
+          </div>
+          <p class="note">$\omega_0=8$, $\omega_1=60\ \mathrm{rad/s}$; $s_i=\pm1$ naprzemiennie (pary diagonalne wirują w tym samym kierunku).</p>
+        </div>
+        <div class="card">
+          <h3>🛠️ Dlaczego proceduralnie?</h3>
+          <ul>
+            <li>Brak zewnętrznych assetów — ten sam kod na web i w expo-gl</li>
+            <li>Materiały wbudowane <code>MeshStandardMaterial</code>, bez własnych shaderów</li>
+            <li>Dostęp do wirników bez parsowania pliku (<code>propellers[]</code>)</li>
+            <li>Zmiana względem planu z Etapu 1 (import <code>.glb</code>)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═════ 8. Środowisko ═════ -->
+  <div class="slide" id="slide-8">
+    <div class="slide-header">
+      <span class="slide-tag">Część 1 — Danylo Mikhnytskyi (284125) • <code>environment.ts</code></span>
+      <h2>Środowisko: niebo, teren, tor i przeszkody</h2>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <h3>🌤️ Niebo, mgła i światło</h3>
+        <ul>
+          <li>Kopuła nieba (sfera r = 2000) z gradientem kolorów wierzchołków, podąża za kamerą</li>
+          <li>Mgła <code>Fog</code>: początek 250 m, koniec 1600 m; tarcza słońca</li>
+          <li><code>HemisphereLight</code> (1,3) + <code>DirectionalLight</code> (2,4), światło podąża za dronem</li>
+          <li>Podłoże 4000×4000 m: <code>DataTexture</code> 64×64, szachownica 5 m, linie co 10 m</li>
+          <li>Lądowisko: walec r = 3 m, żółty pierścień, znak „H"</li>
+        </ul>
+        <p class="note"><span class="tag s">web</span> cienie (PCFSoft, mapa 2048², zasięg ±40 m) i anizotropia tekstury • <span class="tag m">native</span> cienie wyłączone (<code>ENABLE_SHADOWS_NATIVE = false</code>)</p>
+      </div>
+      <div class="card">
+        <h3>🏁 Tor i przeszkody</h3>
+        <ul>
+          <li><b>6 bramek</b> (torus r = 2,5 m; wysokość 4–10 m), tworzą zamkniętą pętlę, każda zorientowana wzdłuż kierunku przelotu</li>
+          <li><b>6 budynków</b> (wys. 14–35 m) z płytą dachową</li>
+          <li><b>4 maszty</b> (15–24 m, 6 pasów biało-czerwonych) z sygnałem migającym 1 Hz</li>
+        </ul>
+        <table style="margin-top:6px;">
+          <tr><th>Bramka</th><th>x</th><th>z</th><th>y</th><th>Kolor</th></tr>
+          <tr><td>1</td><td>0</td><td>−30</td><td>4</td><td>czerwony</td></tr>
+          <tr><td>2</td><td>25</td><td>−60</td><td>7</td><td>pomarańczowy</td></tr>
+          <tr><td>3</td><td>60</td><td>−55</td><td>10</td><td>żółty</td></tr>
+          <tr><td>4</td><td>75</td><td>−20</td><td>6</td><td>zielony</td></tr>
+          <tr><td>5</td><td>50</td><td>10</td><td>9</td><td>niebieski</td></tr>
+          <tr><td>6</td><td>20</td><td>15</td><td>5</td><td>fioletowy</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═════ 9. Joysticki ═════ -->
+  <div class="slide" id="slide-9">
+    <div class="slide-header">
+      <span class="slide-tag">Część 2 — Maksym Mahaz (284115) • <code>VirtualJoystick.tsx</code></span>
+      <h2>Wirtualne joysticki 2D: od dotyku do wektora sterowania</h2>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <h3>📐 Obliczenie wektora</h3>
+        <div class="math-block">
+          $$\mathbf d=\mathbf b+(\mathbf p-\mathbf p_0),\qquad \mathbf d\leftarrow \mathbf d\,\tfrac{R}{\|\mathbf d\|}\ \text{ gdy }\|\mathbf d\|>R$$
+          $$n_x=\tfrac{d_x}{R},\quad n_y=-\tfrac{d_y}{R}\ \in[-1,1]$$
+          $$n'=\operatorname{sgn}(n)\,\tfrac{|n|-0.05}{1-0.05}\ \text{ dla }|n|\ge 0.05,\ \text{inaczej }0$$
+        </div>
+        <p class="note">$\mathbf p_0$ — punkt początku dotyku, $\mathbf b$ — wychylenie gałki na starcie (dla drążka gazu bez Hover Lock), $R=60$ px (promień podstawy), gałka 26 px. Wychylenie liczone <b>względem punktu dotknięcia</b>, nie środka podstawy. Martwa strefa 5 % jest odejmowana i przeskalowana z powrotem do ±1.</p>
+      </div>
+      <div class="card">
+        <h3>🎮 Mapowanie Mode 2</h3>
+        <table>
+          <tr><th>Drążek</th><th>Oś</th><th>Wielkość</th></tr>
+          <tr><td rowspan="2">Lewy</td><td>pion ($n'_y$)</td><td>ciąg $T=0.5+0.5\,n'_y$ ∈ [0, 1]</td></tr>
+          <tr><td>poziom ($n'_x$)</td><td>odchylenie $u_y=n'_x$</td></tr>
+          <tr><td rowspan="2">Prawy</td><td>pion ($n'_y$)</td><td>pochylenie $u_p=n'_y$ (+ = do przodu)</td></tr>
+          <tr><td>poziom ($n'_x$)</td><td>przechylenie $u_r=n'_x$ (+ = w prawo)</td></tr>
+        </table>
+        <ul style="margin-top:10px;">
+          <li>Puszczenie: sprężyna <code>Animated.spring</code> (friction 6, tension 120)</li>
+          <li>Odchylenie i prawy drążek zawsze wracają do zera</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═════ 10. Hover Lock, multi-touch, store, HUD ═════ -->
+  <div class="slide" id="slide-10">
+    <div class="slide-header">
+      <span class="slide-tag">Część 2 — Maksym Mahaz (284115) • <code>HUD.tsx</code>, <code>useDroneStore.ts</code></span>
+      <h2>Hover Lock, multi-touch, Zustand i układ HUD</h2>
+    </div>
+    <div class="grid-2" style="grid-template-columns: 1.15fr 1fr;">
+      <div class="card">
+        <ul>
+          <li><b>Hover Lock ON</b> (domyślnie): drążek gazu wraca do 0,5; fizyka tłumi $v_y$. <b>OFF</b>: gaz „lepki" — zostaje na ustawionej wartości</li>
+          <li><b>Multi-touch:</b> RN dopuszcza jednego respondera, więc jeden <code>PanResponder</code> nad dolnym paskiem kieruje każdy dotyk (wg <code>identifier</code>) do drążka po tej stronie ekranu, gdzie się zaczął (<code>pageX &lt; width/2</code>)</li>
+          <li><b>Do pętli:</b> joysticki zapisują do store (<code>setLeftStick</code>, <code>setRightStick</code>, z <code>clamp</code>); pętla czyta <code>getState()</code> — bez subskrypcji</li>
+          <li><b>Z pętli do HUD:</b> <code>updateTelemetry</code> z częstotliwością 15 Hz; <code>useShallow</code> ogranicza re-rendery</li>
+          <li><b>Reset:</b> <code>resetNonce</code> zwiększany w store, pętla wykrywa zmianę</li>
+        </ul>
+      </div>
+      <div class="col">
+        <div class="card" style="flex:1;">
+          <h3>🖥️ Układ HUD (landscape)</h3>
+          <div class="hudmock">
+            <div class="tel">ALT · H.SPD · V.SPD · THR<br>PITCH · ROLL · X / Z</div>
+            <div class="btns"><span style="background:#2980b9">Camera: TPS</span><span style="background:#27ae60">Hover Lock: ON</span><span style="background:#c0392b">Reset Drone</span></div>
+            <div class="stick" style="left:20px; bottom:20px;"></div><div class="lbl" style="left:20px;">THROTTLE (HOLD) · YAW</div>
+            <div class="stick" style="right:20px; bottom:20px;"></div><div class="lbl" style="right:34px;">PITCH · ROLL</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═════ 11. Kamera TPS ═════ -->
+  <div class="slide" id="slide-11">
+    <div class="slide-header">
+      <span class="slide-tag">Część 2 — Maksym Mahaz (284115) • <code>cameraRig.ts</code></span>
+      <h2>System kamer (1/2): TPS — kamera podążająca</h2>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <h3>🎥 Pozycja zadana i wygładzanie</h3>
+        <div class="math-block">
+          $$\mathbf o=R_y(\psi)\begin{pmatrix}0\\1.8\\4.5\end{pmatrix}=\begin{pmatrix}4.5\sin\psi\\1.8\\4.5\cos\psi\end{pmatrix},\qquad \mathbf c^{*}=\mathbf p+\mathbf o$$
+          $$\mathbf c\leftarrow\mathbf c+(\mathbf c^{*}-\mathbf c)\,\bigl(1-e^{-5\,\Delta t}\bigr)$$
+          $$\text{lookAt}\bigl(p_x,\ p_y+0.4,\ p_z\bigr)$$
+        </div>
+        <p class="note">Przy 60 FPS współczynnik ≈ 0,08. Obrót tylko wokół osi Y — pochylenie i przechylenie nie bujają kamerą. Dodatkowo $c^{*}_y\ge 0.7$ m (nad ziemią).</p>
+      </div>
+      <div class="card">
+        <h3>⚙️ Parametry</h3>
+        <ul>
+          <li>Przesunięcie <code>TPS_OFFSET</code> = (0, 1.8, 4.5) m w układzie odchylenia</li>
+          <li><code>TPS_FOLLOW</code> = 5 s⁻¹ — wygładzanie niezależne od FPS</li>
+          <li>FOV 60°, płaszczyzna bliska 0,1</li>
+          <li>Po zmianie trybu kamera „przeskakuje" do pozycji zadanej (bez przejazdu przez drona)</li>
+          <li>Niebo podąża za pozycją kamery (<code>env.update(dt, focus, camera.position)</code>), niezależnie od trybu</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═════ 12. Kamera FPV ═════ -->
+  <div class="slide" id="slide-12">
+    <div class="slide-header">
+      <span class="slide-tag">Część 2 — Maksym Mahaz (284115) • <code>cameraRig.ts</code></span>
+      <h2>System kamer (2/2): FPV i porównanie z TPS</h2>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <h3>👁️ Kamera przy dziobie drona</h3>
+        <div class="math-block">
+          $$\mathbf E=(-\theta,\ \psi,\ -\varphi),\ \text{kolejność } YXZ$$
+          $$\mathbf c=\mathbf p+R_E\begin{pmatrix}0\\0.03\\-0.34\end{pmatrix},\qquad \text{rotation}=\mathbf E$$
+        </div>
+        <p class="note"><b>Dlaczego YXZ:</b> najpierw odchylenie wokół pionu świata, potem pochylenie wokół lokalnego X, na końcu przechylenie wokół osi „do przodu". Ta sama kolejność jest użyta dla modelu (<code>simulation.ts</code>), więc kamera dokładnie odtwarza postawę drona, a horyzont przechyla się poprawnie. Bez wygładzania, FOV 85°, near 0,05.</p>
+      </div>
+      <div class="card">
+        <h3>⚖️ TPS vs FPV</h3>
+        <table>
+          <tr><th></th><th>TPS</th><th>FPV</th></tr>
+          <tr><td>Pozycja</td><td>za i nad dronem, obrót wg ψ</td><td>nos drona (0, 0.03, −0.34)</td></tr>
+          <tr><td>Orientacja</td><td><code>lookAt</code> na dron (+0,4 m)</td><td>Euler (−θ, ψ, −φ), YXZ</td></tr>
+          <tr><td>Wygładzanie</td><td>tak, 1−e<sup>−5Δt</sup></td><td>brak</td></tr>
+          <tr><td>FOV / near</td><td>60° / 0,1</td><td>85° / 0,05</td></tr>
+          <tr><td>Przechylenie obrazu</td><td>nie</td><td>tak (horyzont się przechyla)</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═════ 13-15. Zrzuty ═════ -->
+  <div class="slide" id="slide-13">
+    <div class="slide-header">
+      <span class="slide-tag">Weryfikacja doświadczalna — Zrzut 1</span>
+      <h2>Zrzut 1: Widok TPS na lądowisku</h2>
+    </div>
+    <div class="grid-shot-slide">
+      <div class="shot-slide-frame">
+        <div class="ph">Miejsce na zrzut ekranu<small>screenshots/zrzut4_tps.png</small></div>
+        <img src="screenshots/zrzut4_tps.png" alt="Zrzut 1: Widok TPS" onerror="this.remove()">
+      </div>
+      <div class="card" style="border-left: 4px solid var(--accent-cyan);">
+        <h3>📷 Opis</h3>
+        <p>Widok TPS — dron na lądowisku z nowym interfejsem dwóch joysticków.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="slide" id="slide-14">
+    <div class="slide-header">
+      <span class="slide-tag">Weryfikacja doświadczalna — Zrzut 2</span>
+      <h2>Zrzut 2: Lot z przechyleniem przez bramki</h2>
+    </div>
+    <div class="grid-shot-slide">
+      <div class="shot-slide-frame" style="border-color: var(--accent-green);">
+        <div class="ph">Miejsce na zrzut ekranu<small>screenshots/zrzut5_lot.png</small></div>
+        <img src="screenshots/zrzut5_lot.png" alt="Zrzut 2: Lot z przechyleniem" onerror="this.remove()">
+      </div>
+      <div class="card" style="border-left: 4px solid var(--accent-green);">
+        <h3>📷 Opis</h3>
+        <p>Lot z przechyleniem (Pitch/Roll) przez bramki kontrolne i animacja śmigieł.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="slide" id="slide-15">
+    <div class="slide-header">
+      <span class="slide-tag">Weryfikacja doświadczalna — Zrzut 3</span>
+      <h2>Zrzut 3: Tryb FPV na torze przeszkód</h2>
+    </div>
+    <div class="grid-shot-slide">
+      <div class="shot-slide-frame" style="border-color: var(--accent-orange);">
+        <div class="ph">Miejsce na zrzut ekranu<small>screenshots/zrzut6_fpv.png</small></div>
+        <img src="screenshots/zrzut6_fpv.png" alt="Zrzut 3: Tryb FPV" onerror="this.remove()">
+      </div>
+      <div class="card" style="border-left: 4px solid var(--accent-orange);">
+        <h3>📷 Opis</h3>
+        <p>Tryb FPV (widok z kamery drona) podczas przelotu przez tor przeszkód.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═════ 16. Wyzwania ═════ -->
+  <div class="slide" id="slide-16">
+    <div class="slide-header">
+      <span class="slide-tag">Wyzwania i rozwiązania</span>
+      <h2>Najważniejsze problemy i ich rozwiązania</h2>
+    </div>
+    <div class="card" style="flex: none;">
+      <table>
+        <tr><th style="width:26%">Problem</th><th>Rozwiązanie w kodzie</th></tr>
+        <tr><td>Dwa renderery (web / expo-gl) z powielonym kodem</td><td><code>core/simulation.ts</code> — wspólna scena i <code>step(dt)</code>; <code>Scene*.tsx</code> tylko tworzą renderer i pętlę</td></tr>
+        <tr><td>Ograniczenia expo-gl</td><td>Materiały wbudowane i <code>DataTexture</code> zamiast własnych shaderów; cienie wyłączone natywnie; łatki <code>getShaderInfoLog</code>; rozmiar z <code>onLayout</code> (bufor GL stały)</td></tr>
+        <tr><td>Jeden responder w React Native</td><td>Jeden <code>PanResponder</code> i routing dotyków po <code>identifier</code> do lewego/prawego drążka</td></tr>
+        <tr><td>Aktualizacje store co klatkę vs. re-rendery HUD</td><td>Pętla czyta <code>getState()</code>; telemetria 15 Hz; <code>useShallow</code> w HUD</td></tr>
+        <tr><td>Kolejność obrotów w FPV i zależność od FPS</td><td>Euler <code>YXZ</code> z ujemnymi kątami (konwencja w <code>physics.ts</code>); wygładzanie <code>1−e^(−k·dt)</code>; <code>dt ≤ 0,05</code></td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- ═════ 17. Ograniczenia ═════ -->
+  <div class="slide" id="slide-17">
+    <div class="slide-header">
+      <span class="slide-tag">Ograniczenia i dalszy rozwój</span>
+      <h2>Co jeszcze nie działa i co dalej</h2>
+    </div>
+    <div class="grid-2">
+      <div class="card" style="border-left: 4px solid var(--accent-red);">
+        <h3>⚠️ Ograniczenia (stan kodu)</h3>
+        <ul>
+          <li>Brak kolizji z bramkami, budynkami i masztami — fizyka zna tylko podłoże i pułap</li>
+          <li>Bramki nie są zaliczane (brak licznika, czasu okrążenia)</li>
+          <li>Dynamika obrotowa uproszczona: kąty dążą do zadanych (bez momentów bezwładności)</li>
+          <li>Cienie wyłączone na urządzeniach natywnych</li>
+          <li>Model proceduralny zamiast importu <code>.glb</code> z planu Etapu 1</li>
+          <li>Brak testów automatycznych (w repozytorium nie ma skryptu testów)</li>
+        </ul>
+      </div>
+      <div class="card" style="border-left: 4px solid var(--accent-green);">
+        <h3>🚀 Pomysły na kolejne etapy</h3>
+        <ul>
+          <li>Wykrywanie kolizji (bryły ograniczające budynków, torusy bramek)</li>
+          <li>Zaliczanie bramek, stoper, tablica wyników</li>
+          <li>Wiatr i bezwładność obrotowa</li>
+          <li>Cienie natywnie (po profilowaniu)</li>
+          <li>Opcjonalny import modelu glTF</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═════ 18. Podsumowanie ═════ -->
+  <div class="slide" id="slide-18">
+    <div class="slide-header">
+      <span class="slide-tag">Podsumowanie</span>
+      <h2>Wnioski z Etapów 2–5</h2>
+    </div>
+    <div class="grid-2">
+      <div class="card" style="border-left: 4px solid var(--accent-green);">
+        <h3>✅ Osiągnięcia</h3>
+        <ul>
+          <li>Pełna fizyka 6-DOF z oporem i limitami prędkości</li>
+          <li>Proceduralny quadkopter z animowanymi śmigłami</li>
+          <li>Dwa joysticki Mode 2 z multi-touch i Hover Lock</li>
+          <li>Kamery TPS / FPV; środowisko z 6 bramkami, 6 budynkami, 4 masztami</li>
+          <li>Jeden wspólny rdzeń <code>src/core/</code> dla web i native</li>
+        </ul>
+      </div>
+      <div class="card" style="border-left: 4px solid var(--accent-cyan);">
+        <h3>🧩 Podział pracy</h3>
+        <p><b>Danylo Mikhnytskyi (284125):</b> fizyka, model 3D, środowisko, renderery.</p>
+        <p style="margin-top:6px;"><b>Maksym Mahaz (284115):</b> joysticki, HUD, store, kamery.</p>
+        <p style="margin-top:6px;"><b>Wspólnie:</b> stałe, <code>simulation.ts</code>, integracja.</p>
+      </div>
+    </div>
+    <div style="flex: none; text-align: center; padding: 14px; background: rgba(0, 210, 255, 0.05); border-radius: 12px; border: 1px dashed var(--accent-cyan);">
+      <h3 style="justify-content: center; font-size: 1.3em; color: #fff;">Dziękujemy za uwagę!</h3>
+      <p style="color: var(--text-muted); font-size: 0.9em;">Danylo Mikhnytskyi (284125) • Maksym Mahaz (284115) • Grafika Komputerowa i GUI</p>
+    </div>
+  </div>
+
+  <div class="controls">
+    <span class="slide-counter" id="counter">1 / 18</span>
+    <button class="btn" id="prevBtn" onclick="prevSlide()">◀ Wstecz</button>
+    <button class="btn" id="nextBtn" onclick="nextSlide()">Dalej ▶</button>
+    <button class="btn" onclick="window.print()" title="Drukuj lub zapisz jako PDF">🖨️ PDF</button>
+  </div>
+</div>
+
+<script>
+  let currentSlide = 1;
+  const slides = document.querySelectorAll('.slide');
+  const totalSlides = slides.length;
+
+  function showSlide(index) {
+    currentSlide = Math.min(Math.max(index, 1), totalSlides);
+    slides.forEach((s, i) => s.classList.toggle('active', i + 1 === currentSlide));
+    document.getElementById('counter').innerText = `${currentSlide} / ${totalSlides}`;
+    document.getElementById('prevBtn').disabled = currentSlide === 1;
+    document.getElementById('nextBtn').disabled = currentSlide === totalSlides;
+  }
+  function nextSlide() { showSlide(currentSlide + 1); }
+  function prevSlide() { showSlide(currentSlide - 1); }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') nextSlide();
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') prevSlide();
+    else if (e.key === 'Home') showSlide(1);
+    else if (e.key === 'End') showSlide(totalSlides);
+  });
+
+  function fit() {
+    const s = Math.min(window.innerWidth / 1300, window.innerHeight / 740);
+    document.documentElement.style.setProperty('--scale', s);
+  }
+  window.addEventListener('resize', fit);
+  fit();
+  showSlide(1);
+</script>
+</body>
+</html>

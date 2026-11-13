@@ -1,13 +1,13 @@
 /**
  * ============================================
- *  Drone Simulator — Заняття 1 / 8
- *  Grafika komputerowa i komunikacja człowiek-komputer
+ *  Drone Simulator — Stages 2–5
+ *  Computer Graphics and GUI
  *
- *  Autorzy:
- *    Maksym Mahaz    (284115) — store, HUD, CameraController
- *    Danylo Mikhnytskyi (284125) — DroneCube, Scene
+ *  Authors:
+ *    Maksym Mahaz       (284115) — store, HUD, joysticks, camera rig
+ *    Danylo Mikhnytskyi (284125) — scenes, drone model, physics, environment
  *
- *  App.tsx — punkt wejścia (root)
+ *  App.tsx — application entry point (root)
  * ============================================
  */
 

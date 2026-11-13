@@ -1,75 +1,80 @@
 /**
  * ============================================
- *  Autor:  Maksym Mahaz (284115)
- *  Plik:   src/components/HUD.tsx
- *  Opis:   Overlay HUD — telemetria + pult sterowania ciągiem
+ *  Author:  Maksym Mahaz (284115)
+ *  File:    src/components/HUD.tsx
+ *  Desc:    HUD overlay — telemetry bar, mode buttons, virtual joysticks
  * ============================================
  */
 
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { useShallow } from "zustand/react/shallow";
 import { useDroneStore } from "../store/useDroneStore";
+import { GROUND_Y } from "../core/constants";
+import DualJoysticks from "./VirtualJoystick";
 
-/* ── Telemetry Card ─────────────────────────── */
+const RAD2DEG = 180 / Math.PI;
 
-const TelemetryCard: React.FC = () => {
-  const altitude = useDroneStore((s) => s.altitude);
-  const velocityY = useDroneStore((s) => s.velocityY);
-  const throttle = useDroneStore((s) => s.throttle);
+/* ── Telemetry bar ──────────────────────────── */
+
+const TelemetryBar: React.FC = () => {
+  const t = useDroneStore(
+    useShallow((s) => ({
+      position: s.position,
+      velocity: s.velocity,
+      speed: s.speed,
+      rotation: s.rotation,
+      throttle: s.throttle,
+    }))
+  );
 
   return (
-    <View style={styles.telemetryCard}>
-      <Text style={styles.telemetryTitle}>📡 Telemetria</Text>
-
-      <Row label="Altitude" value={`${altitude.toFixed(2)} m`} />
-      <Row label="Vertical Speed" value={`${velocityY.toFixed(2)} m/s`} />
-      <Row label="Throttle" value={`${(throttle * 100).toFixed(0)} %`} />
+    <View style={styles.telemetry} pointerEvents="none">
+      <Item label="ALT" value={`${(t.position.y - GROUND_Y).toFixed(1)} m`} />
+      <Item label="H.SPD" value={`${t.speed.toFixed(1)} m/s`} />
+      <Item label="V.SPD" value={`${t.velocity.y.toFixed(1)} m/s`} />
+      <Item label="THR" value={`${Math.round(t.throttle * 100)} %`} />
+      <Item label="PITCH" value={`${(t.rotation.pitch * RAD2DEG).toFixed(0)}°`} />
+      <Item label="ROLL" value={`${(t.rotation.roll * RAD2DEG).toFixed(0)}°`} />
+      <Item label="X / Z" value={`${t.position.x.toFixed(0)} / ${t.position.z.toFixed(0)}`} />
     </View>
   );
 };
 
-const Row: React.FC<{ label: string; value: string }> = ({ label, value }) => (
-  <View style={styles.row}>
-    <Text style={styles.label}>{label}</Text>
-    <Text style={styles.value}>{value}</Text>
+const Item: React.FC<{ label: string; value: string }> = ({ label, value }) => (
+  <View style={styles.item}>
+    <Text style={styles.itemLabel}>{label}</Text>
+    <Text style={styles.itemValue}>{value}</Text>
   </View>
 );
 
-/* ── Throttle Controls ──────────────────────── */
+/* ── Mode buttons ───────────────────────────── */
 
-const ThrottleControls: React.FC = () => {
-  const throttle = useDroneStore((s) => s.throttle);
-  const setThrottle = useDroneStore((s) => s.setThrottle);
-  const changeThrottle = useDroneStore((s) => s.changeThrottle);
-
-  const pct = Math.round(throttle * 100);
+const Buttons: React.FC = () => {
+  const cameraMode = useDroneStore((s) => s.cameraMode);
+  const hoverLock = useDroneStore((s) => s.hoverLock);
+  const toggleCameraMode = useDroneStore((s) => s.toggleCameraMode);
+  const toggleHoverLock = useDroneStore((s) => s.toggleHoverLock);
+  const resetDrone = useDroneStore((s) => s.resetDrone);
 
   return (
-    <View style={styles.controlsCard}>
-      {/* Progress bar */}
-      <View style={styles.barOuter}>
-        <View style={[styles.barInner, { width: `${pct}%` }]} />
-        <Text style={styles.barText}>{pct}%</Text>
-      </View>
-
-      {/* Button row */}
-      <View style={styles.buttonRow}>
-        <Btn title="−10 %" onPress={() => changeThrottle(-0.1)} color="#e74c3c" />
-        <Btn title="+10 %" onPress={() => changeThrottle(0.1)} color="#2ecc71" />
-      </View>
-      <View style={styles.buttonRow}>
-        <Btn title="Hover (50 %)" onPress={() => setThrottle(0.5)} color="#3498db" />
-        <Btn title="Cut Off (0 %)" onPress={() => setThrottle(0)} color="#95a5a6" />
-      </View>
+    <View style={styles.buttons}>
+      <Btn title={`Camera: ${cameraMode}`} color="#2980b9" onPress={toggleCameraMode} />
+      <Btn
+        title={`Hover Lock: ${hoverLock ? "ON" : "OFF"}`}
+        color={hoverLock ? "#27ae60" : "#7f8c8d"}
+        onPress={toggleHoverLock}
+      />
+      <Btn title="Reset Drone" color="#c0392b" onPress={resetDrone} />
     </View>
   );
 };
 
-const Btn: React.FC<{
-  title: string;
-  onPress: () => void;
-  color: string;
-}> = ({ title, onPress, color }) => (
+const Btn: React.FC<{ title: string; onPress: () => void; color: string }> = ({
+  title,
+  onPress,
+  color,
+}) => (
   <TouchableOpacity
     style={[styles.button, { backgroundColor: color }]}
     onPress={onPress}
@@ -83,14 +88,11 @@ const Btn: React.FC<{
 
 const HUD: React.FC = () => (
   <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
-    {/* Top: telemetry */}
-    <TelemetryCard />
-
-    {/* Spacer pushes controls to bottom */}
-    <View style={{ flex: 1 }} pointerEvents="none" />
-
-    {/* Bottom: throttle controls */}
-    <ThrottleControls />
+    <DualJoysticks />
+    <View style={styles.topRow} pointerEvents="box-none">
+      <TelemetryBar />
+      <Buttons />
+    </View>
   </View>
 );
 
@@ -99,70 +101,39 @@ export default HUD;
 /* ── Styles ─────────────────────────────────── */
 
 const styles = StyleSheet.create({
-  /* Telemetry card */
-  telemetryCard: {
-    margin: 16,
-    marginTop: 50,
-    padding: 14,
-    borderRadius: 12,
-    backgroundColor: "rgba(0,0,0,0.65)",
-  },
-  telemetryTitle: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "700",
-    marginBottom: 6,
-  },
-  row: {
+  topRow: {
     flexDirection: "row",
     justifyContent: "space-between",
+    alignItems: "flex-start",
+    paddingHorizontal: 12,
+    paddingTop: 12,
+    gap: 10,
+  },
+  telemetry: {
+    flexShrink: 1,
+    flexDirection: "row",
+    flexWrap: "wrap",
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    borderRadius: 10,
+    backgroundColor: "rgba(0,0,0,0.6)",
+  },
+  item: {
+    minWidth: 62,
+    paddingHorizontal: 6,
     paddingVertical: 2,
   },
-  label: { color: "#aaa", fontSize: 14 },
-  value: { color: "#0f0", fontSize: 14, fontFamily: "monospace" },
-
-  /* Controls card */
-  controlsCard: {
-    margin: 16,
-    marginBottom: 36,
-    padding: 14,
-    borderRadius: 12,
-    backgroundColor: "rgba(0,0,0,0.65)",
-  },
-
-  /* Progress bar */
-  barOuter: {
-    height: 22,
-    borderRadius: 6,
-    backgroundColor: "#333",
-    marginBottom: 10,
-    overflow: "hidden",
-    justifyContent: "center",
-  },
-  barInner: {
-    ...StyleSheet.absoluteFill,
-    backgroundColor: "#2ecc71",
-    borderRadius: 6,
-  },
-  barText: {
-    color: "#fff",
-    fontSize: 12,
-    fontWeight: "700",
-    textAlign: "center",
-  },
-
-  /* Buttons */
-  buttonRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 8,
+  itemLabel: { color: "#9aa", fontSize: 10, fontWeight: "700", letterSpacing: 0.5 },
+  itemValue: { color: "#3f6", fontSize: 14, fontFamily: "monospace" },
+  buttons: {
+    gap: 6,
+    alignItems: "stretch",
   },
   button: {
-    flex: 1,
-    marginHorizontal: 4,
-    paddingVertical: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
     borderRadius: 8,
     alignItems: "center",
   },
-  buttonText: { color: "#fff", fontSize: 14, fontWeight: "600" },
+  buttonText: { color: "#fff", fontSize: 13, fontWeight: "600" },
 });

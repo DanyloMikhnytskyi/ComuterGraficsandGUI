@@ -11,7 +11,6 @@
   "dependencies": {
     "@expo/metro-runtime": "~58.0.15",
     "@react-native/assets-registry": "^0.86.3",
-    "@react-three/fiber": "~9.0.0",
     "expo": "~58.0.0",
     "expo-asset": "~58.0.18",
     "expo-file-system": "~58.0.12",

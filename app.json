@@ -3,7 +3,7 @@
     "name": "drone-simulator",
     "slug": "drone-simulator",
     "version": "1.0.0",
-    "orientation": "portrait",
+    "orientation": "landscape",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
