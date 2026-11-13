@@ -1,0 +1,35 @@
+{
+  "name": "drone-simulator",
+  "version": "1.0.0",
+  "main": "node_modules/expo/AppEntry.js",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web"
+  },
+  "dependencies": {
+    "@expo/metro-runtime": "~58.0.15",
+    "@react-native/assets-registry": "^0.86.3",
+    "@react-three/fiber": "~9.0.0",
+    "expo": "~58.0.0",
+    "expo-asset": "~58.0.18",
+    "expo-file-system": "~58.0.12",
+    "expo-gl": "~58.0.3",
+    "expo-status-bar": "~58.0.4",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "react-native": "0.88.0",
+    "react-native-web": "^0.21.4",
+    "three": "~0.175.0",
+    "zustand": "~5.0.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.26.0",
+    "@types/react": "~19.3.0",
+    "@types/three": "~0.175.0",
+    "pptxgenjs": "^4.0.1",
+    "typescript": "~5.8.0"
+  },
+  "private": true
+}

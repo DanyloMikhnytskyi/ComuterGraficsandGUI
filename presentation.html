@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Symulator Drona 3D — Etap 1: Obrona Projektu</title>
+  <!-- KaTeX for beautiful math formulas -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"
+    onload="renderMathInElement(document.body);"></script>
+
+  <style>
+    :root {
+      --bg-color: #0b0d17;
+      --card-bg: rgba(22, 27, 46, 0.85);
+      --border-color: #2a3454;
+      --accent-cyan: #00d2ff;
+      --accent-blue: #3a7bd5;
+      --accent-green: #2ecc71;
+      --accent-orange: #f39c12;
+      --text-main: #f0f4f8;
+      --text-muted: #94a3b8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      overflow: hidden;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* Presentation Container */
+    #presentation {
+      width: 90vw;
+      max-width: 1200px;
+      height: 85vh;
+      max-height: 750px;
+      position: relative;
+      background: radial-gradient(circle at top right, #1a2238 0%, #0b0d17 70%);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6), 0 0 40px rgba(0, 210, 255, 0.1);
+      overflow: hidden;
+    }
+
+    /* Individual Slide */
+    .slide {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      padding: 40px 60px;
+      display: none;
+      flex-direction: column;
+      justify-content: space-between;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.4s ease, transform 0.4s ease;
+    }
+
+    .slide.active {
+      display: flex;
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Slide Header */
+    .slide-header {
+      margin-bottom: 20px;
+    }
+
+    .slide-tag {
+      display: inline-block;
+      font-size: 0.8em;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: var(--accent-cyan);
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    h1 {
+      font-size: 2.3em;
+      font-weight: 800;
+      background: linear-gradient(90deg, #00d2ff, #3a7bd5);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 8px;
+    }
+
+    h2 {
+      font-size: 1.7em;
+      color: var(--text-main);
+      font-weight: 700;
+    }
+
+    h3 {
+      font-size: 1.15em;
+      color: var(--accent-cyan);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Grid Layouts */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 25px;
+      flex: 1;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 20px;
+      flex: 1;
+    }
+
+    /* Glass Cards */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 22px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+    }
+
+    .card ul {
+      list-style-type: none;
+      padding-left: 0;
+    }
+
+    .card li {
+      position: relative;
+      padding-left: 22px;
+      margin-bottom: 10px;
+      font-size: 0.95em;
+      line-height: 1.5;
+      color: #cbd5e1;
+    }
+
+    .card li::before {
+      content: "▹";
+      position: absolute;
+      left: 0;
+      color: var(--accent-cyan);
+      font-weight: bold;
+    }
+
+    code {
+      background: rgba(0, 210, 255, 0.1);
+      color: var(--accent-cyan);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: ui-monospace, Menlo, Monaco, monospace;
+      font-size: 0.9em;
+    }
+
+    /* Formulas */
+    .math-block {
+      background: rgba(15, 23, 42, 0.8);
+      border-left: 3px solid var(--accent-cyan);
+      padding: 10px 14px;
+      margin: 8px 0;
+      border-radius: 0 8px 8px 0;
+      font-size: 0.95em;
+    }
+
+    /* Screenshot Cards */
+    .shot-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+
+    .shot-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--accent-cyan);
+    }
+
+    .shot-img-wrapper {
+      width: 100%;
+      height: 180px;
+      background: #000;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .shot-img-wrapper img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .shot-info {
+      padding: 14px;
+      flex: 1;
+    }
+
+    .shot-title {
+      font-weight: 700;
+      color: var(--text-main);
+      font-size: 0.95em;
+      margin-bottom: 6px;
+    }
+
+    .shot-desc {
+      font-size: 0.82em;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    /* Single Screenshot Slide Layout (16:9 split) */
+    .grid-shot-slide {
+      display: grid;
+      grid-template-columns: 1.6fr 1fr;
+      gap: 25px;
+      flex: 1;
+      align-items: stretch;
+      min-height: 0;
+    }
+
+    .shot-slide-frame {
+      background: #05070e;
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+      padding: 10px;
+    }
+
+    .shot-slide-frame img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      border-radius: 8px;
+    }
+
+    /* Slide Footer Controls */
+    .controls {
+      position: absolute;
+      bottom: 20px;
+      right: 30px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      z-index: 100;
+    }
+
+    .btn {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 0.85em;
+      transition: all 0.2s ease;
+    }
+
+    .btn:hover {
+      background: var(--accent-blue);
+      border-color: var(--accent-blue);
+      color: #fff;
+    }
+
+    .slide-counter {
+      font-size: 0.85em;
+      color: var(--text-muted);
+      font-weight: 600;
+      margin-right: 10px;
+    }
+
+    /* Print for exact 6-page landscape PDF export */
+    @page {
+      size: 16in 9in landscape;
+      margin: 0;
+    }
+    @media print {
+      body {
+        margin: 0;
+        padding: 0;
+        overflow: visible;
+        background: #0b0d17 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      #presentation {
+        width: 100vw;
+        max-width: 100vw;
+        height: auto;
+        max-height: none;
+        border: none;
+        box-shadow: none;
+        overflow: visible;
+        background: none;
+        border-radius: 0;
+      }
+      .slide {
+        position: relative;
+        display: flex !important;
+        opacity: 1 !important;
+        transform: none !important;
+        page-break-after: always;
+        break-after: page;
+        height: 100vh;
+        max-height: 100vh;
+        padding: 40px 60px;
+        background: radial-gradient(circle at top right, #1a2238 0%, #0b0d17 70%) !important;
+        color: #fff;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      .slide:last-child {
+        page-break-after: avoid;
+        break-after: avoid;
+      }
+      .controls {
+        display: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="presentation">
+
+    <!-- ─────────────────────────────────────────────
+         Slajd 1: Tytułowy
+         ───────────────────────────────────────────── -->
+    <div class="slide active" id="slide-1">
+      <div class="slide-header">
+        <span class="slide-tag">Politechnika • Grafika Komputerowa i Komunikacja Człowiek-Komputer</span>
+        <h1>Symulator Drona 3D</h1>
+        <h2>Etap 1: Prototyp, Fizyka Ciągu i Interfejs HUD</h2>
+      </div>
+
+      <div class="grid-2" style="margin-top: 15px;">
+        <div class="card" style="border-left: 4px solid var(--accent-cyan);">
+          <h3>👨‍💻 Danylo Mikhnytskyi (284125)</h3>
+          <ul>
+            <li>Silnik 3D i kompozycja sceny (Three.js / WebGL / expo-gl).</li>
+            <li>Matematyczny model dynamiki lotu (fizyka siły ciągu i grawitacji).</li>
+            <li>Obsługa detekcji kolizji z podłożem i reakcji normalnej.</li>
+          </ul>
+        </div>
+
+        <div class="card" style="border-left: 4px solid var(--accent-orange);">
+          <h3>👨‍💻 Maksym Mahaz (284115)</h3>
+          <ul>
+            <li>Projekt i architektura interfejsu użytkownika HUD (React Native).</li>
+            <li>Globalny magazyn stanu telemetrii (Zustand) dla 60 FPS.</li>
+            <li>Algorytm płynnego śledzenia kamery za obiektem (LERP).</li>
+          </ul>
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 25px; padding-top: 15px; border-top: 1px solid var(--border-color);">
+        <span style="color: var(--text-muted); font-size: 0.9em;">Semestr letni 2025/2026 • Projekt Zespołowy (Etap 1 z 8)</span>
+        <span style="color: var(--accent-green); font-size: 0.9em; font-weight: 600;">Status: Prototyp w pełni zrealizowany</span>
+      </div>
+    </div>
+
+    <!-- ─────────────────────────────────────────────
+         Slajd 2: Stos technologiczny
+         ───────────────────────────────────────────── -->
+    <div class="slide" id="slide-2">
+      <div class="slide-header">
+        <span class="slide-tag">Architektura Systemowa</span>
+        <h2>Stos Technologiczny i Optymalizacja Wydajności</h2>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <h3>📱 Expo SDK 58 & React Native</h3>
+          <ul>
+            <li><strong>Wieloplatformowość:</strong> Jeden kod źródłowy w TypeScript kompilowany dla przeglądarek Web oraz natywnie dla smartfonów (Expo Go).</li>
+            <li><strong>Niezależność warstw:</strong> Odseparowanie warstwy renderowania grafiki 3D od deklaratywnego interfejsu dotykowego GUI.</li>
+            <li><strong>Koncepcja Zero-Latency:</strong> Minimalizacja opóźnień między wejściem użytkownika a reakcją silnika fizycznego.</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <h3>🎮 Three.js & expo-gl</h3>
+          <ul>
+            <li><strong>Akceleracja sprzętowa:</strong> Bezpośrednie wykorzystanie procesora graficznego (GPU) przez WebGL 2 oraz OpenGL ES.</li>
+            <li><strong>Podwójny renderer:</strong> <code>Scene.web.tsx</code> dla przeglądarek oraz <code>Scene.tsx</code> z obsługą <code>gl.endFrameEXP()</code> dla urządzeń mobilnych.</li>
+            <li><strong>Pętla 60 FPS:</strong> Dedykowana pętla <code>requestAnimationFrame</code> niezależna od cyklu życia komponentów Reacta.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top: 18px;">
+        <h3>⚡ Zustand — Reaktywna synchronizacja GUI ↔ 3D</h3>
+        <p style="font-size: 0.9em; color: #cbd5e1; line-height: 1.5;">
+          Zamiast tradycyjnego stanu Reacta (powodującego kosztowne re-renderowanie całego drzewa komponentów przy każdej zmianie wysokości), zastosowano <strong>Zustand</strong>. Pętla fizyki aktualizuje telemetrię atomowo, a komponenty HUD subskrybują wyłącznie zmienione selektory wartości. Gwarantuje to stałe <strong>60 klatek na sekundę</strong> bez dropów wydajności.
+        </p>
+      </div>
+    </div>
+
+    <!-- ─────────────────────────────────────────────
+         Slajd 3: Wkład Danylo Mikhnytskyi
+         ───────────────────────────────────────────── -->
+    <div class="slide" id="slide-3">
+      <div class="slide-header">
+        <span class="slide-tag">Grafika Komputerowa i Fizyka 3D</span>
+        <h2>Wkład: Danylo Mikhnytskyi (284125)</h2>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <h3>🌐 Scena 3D i Środowisko</h3>
+          <ul>
+            <li><strong>Oświetlenie:</strong> <code>AmbientLight</code> (0.7) dla widoczności otoczenia oraz <code>DirectionalLight</code> (1.2) zcieniami symulujące słońce.</li>
+            <li><strong>Powierzchnia lądowiska:</strong> <code>PlaneGeometry(1000, 1000)</code> o realistycznym kolorze <code>#2d572c</code>.</li>
+            <li><strong>Siatka metryczna:</strong> <code>GridHelper(1000, 100)</code> pozwalająca pilotowi na natychmiastową ocenę wysokości i prędkości.</li>
+            <li><strong>Model drona:</strong> <code>BoxGeometry(1.2, 0.3, 1.2)</code> o proporcjach korpusu bezzałogowca.</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <h3>📐 Model Matematyczny Lotu 1D</h3>
+          <p style="font-size: 0.9em; color: var(--text-muted);">Równanie wypadkowego przyspieszenia pionowego:</p>
+          <div class="math-block">
+            $$a_y = T \cdot T_{\max} - g$$
+          </div>
+          <p style="font-size: 0.85em; color: #94a3b8;">
+            $g = 9.81\text{ m/s}^2$, $T_{\max} = 19.62\text{ m/s}^2$. Dla $T = 0.5$ (Hover): $a_y = 0.00\text{ m/s}^2$.
+          </p>
+
+          <p style="font-size: 0.9em; color: var(--text-muted); margin-top: 8px;">Całkowanie numeryczne metodą Eulera:</p>
+          <div class="math-block">
+            $$v_y(t + \Delta t) = v_y(t) + a_y \cdot \Delta t$$
+            $$y(t + \Delta t) = y(t) + v_y \cdot \Delta t$$
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top: 15px;">
+        <h3>🛡️ Reakcja Normalna Podłoża i Ograniczenia Ruchu</h3>
+        <p style="font-size: 0.88em; color: #cbd5e1;">
+          Gdy dron dotyka ziemi ($y \le 0.15\text{ m}$), siła reakcji podłoża natychmiast równoważy grawitację: przyspieszenie i prędkość są zerowane, co eliminuje drgania i wpadanie pod podłoże. Zaimplementowano szybki rozbieg z limitem wznoszenia <strong>$15\text{ m/s}$</strong>, swobodne opadanie grawitacyjne oraz pułap maksymalny <strong>$500\text{ m}$</strong>.
+        </p>
+      </div>
+    </div>
+
+    <!-- ─────────────────────────────────────────────
+         Slajd 4: Wkład Maksym Mahaz
+         ───────────────────────────────────────────── -->
+    <div class="slide" id="slide-4">
+      <div class="slide-header">
+        <span class="slide-tag">Komunikacja Człowiek-Komputer (GUI)</span>
+        <h2>Wkład: Maksym Mahaz (284115)</h2>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <h3>📡 Interfejs Telemetryczny HUD</h3>
+          <ul>
+            <li><strong>Warstwa GUI:</strong> Nakładka z <code>pointerEvents="box-none"</code> — przyciski są klikalne, nie blokując przy tym gestów i renderu sceny 3D.</li>
+            <li><strong>Karta parametrów lotu:</strong> Odczyt w czasie rzeczywistym wysokości (<code>Altitude</code>), prędkości pionowej (<code>Vertical Speed</code>) oraz poziomu ciągu (<code>Throttle %</code>).</li>
+            <li><strong>Pulpit sterowniczy:</strong> Przyciski skokowe <code>-10%</code>, <code>+10%</code>, natychmiastowy zawis <code>Hover (50%)</code>, odcięcie ciągu <code>Cut Off (0%)</code> oraz animowany Progress Bar.</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <h3>🎥 Dynamiczny Kontroler Kamery</h3>
+          <p style="font-size: 0.9em; color: var(--text-muted);">Płynna interpolacja pozycji kamery (LERP):</p>
+          <div class="math-block">
+            $$P_{\text{cam}, y}(t + \Delta t) = \text{lerp}(P_{\text{cam}, y}(t),\, y_{\text{dron}} + 3,\, 0.05)$$
+          </div>
+          <p style="font-size: 0.9em; color: var(--text-muted); margin-top: 6px;">Ciągłe śledzenie punktu skupienia:</p>
+          <div class="math-block">
+            $$\text{camera.lookAt}(0,\, y_{\text{dron}},\, 0)$$
+          </div>
+          <p style="font-size: 0.85em; color: #94a3b8;">
+            Kamera podąża 6 metrów za dronem i 3 metry powyżej, gwarantując stabilny kadr pozbawiony gwałtownych wstrząsów.
+          </p>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top: 15px;">
+        <h3>🕹️ Autopilot Aktywnego Zawisu (Active Hover 50%)</h3>
+        <p style="font-size: 0.88em; color: #cbd5e1;">
+          Wciśnięcie przycisku <em>Hover (50%)</em> aktywuje algorytm tłumienia prędkości resztkowej (wygaszanie do $0.00\text{ m/s}$), co pozwala natychmiast zatrzymać ruch pionowy i zablokować drona na żądanej wysokości w powietrzu.
+        </p>
+      </div>
+    </div>
+
+    <!-- ─────────────────────────────────────────────
+         Slajd 5: Zrzut 1 — Stan Początkowy
+         ───────────────────────────────────────────── -->
+    <div class="slide" id="slide-5">
+      <div class="slide-header">
+        <span class="slide-tag">Weryfikacja Doświadczalna — Faza 1</span>
+        <h2>Zrzut 1: Stan Początkowy (Dron na Ziemi)</h2>
+      </div>
+
+      <div class="grid-shot-slide">
+        <div class="shot-slide-frame">
+          <img src="screenshots/zrzut1_start.png" alt="Zrzut 1: Stan początkowy na ziemi">
+        </div>
+        <div class="card" style="border-left: 4px solid var(--accent-cyan);">
+          <h3>📊 Parametry Telemetrii i Fizyka</h3>
+          <ul>
+            <li><strong>THROTTLE: <code>0%</code></strong> — Silniki wyłączone, brak ciągu pionowego.</li>
+            <li><strong>ALTITUDE: <code>0.15 m</code></strong> — Wysokość geometryczna środka bryły drona (o grubości 0.3 m). Wskaźnik HUD pokazuje idealne <code>0.00 m</code> nad gruntem.</li>
+            <li><strong>VERTICAL SPEED: <code>0.00 m/s</code></strong> — Pełny spoczynek układu w układzie współrzędnych.</li>
+            <li><strong>Siła reakcji podłoża:</strong> Ciężar drona $F_g = m \cdot g$ jest w 100% równoważony przez normalną siłę reakcji podłoża $N$. Zabezpieczenie numeryczne uniemożliwia zapadanie się pod siatkę.</li>
+            <li><strong>Scena 3D:</strong> Dron wycentrowany na płycie lądowiska ($4 \times 4\text{ m}$) w otoczeniu siatki pomocniczej.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─────────────────────────────────────────────
+         Slajd 6: Zrzut 2 — Wznoszenie i Zawis
+         ───────────────────────────────────────────── -->
+    <div class="slide" id="slide-6">
+      <div class="slide-header">
+        <span class="slide-tag">Weryfikacja Doświadczalna — Faza 2</span>
+        <h2>Zrzut 2: Wznoszenie Ciągiem > 50% i Aktywny Zawis</h2>
+      </div>
+
+      <div class="grid-shot-slide">
+        <div class="shot-slide-frame" style="border-color: var(--accent-green);">
+          <img src="screenshots/zrzut2_wznoszenie.png" alt="Zrzut 2: Dynamiczne wznoszenie i zawis">
+        </div>
+        <div class="card" style="border-left: 4px solid var(--accent-green);">
+          <h3>🚀 Dynamika Lotu i Tryb Zawisu</h3>
+          <ul>
+            <li><strong>THROTTLE: <code>80%</code> (lub <code>50%</code>)</strong> — Ciąg przewyższający siłę grawitacji generuje dodatnie przyspieszenie $a_y = +5.89\text{ m/s}^2$.</li>
+            <li><strong>ALTITUDE: <code>12.62 m</code></strong> — Płynny, stabilny wzrost wysokości lotu w czasie rzeczywistym.</li>
+            <li><strong>VERTICAL SPEED: <code>+12.07 m/s</code></strong> — Prędkość wznoszenia ograniczona regulatorem do bezpiecznego maksimum $15.0\text{ m/s}$.</li>
+            <li><strong>Aktywny zawis (Hover 50%):</strong> Przy ustawieniu przepustnicy na 50% kontroler aktywnie tłumi prędkość ($v_y \to 0$ przez LERP), blokując wysokość w powietrzu.</li>
+            <li><strong>Kamera LERP:</strong> Płynne trzecioosobowe podążanie za modelem bez drgań kadru.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─────────────────────────────────────────────
+         Slajd 7: Zrzut 3 — Opadanie pod Grawitacją
+         ───────────────────────────────────────────── -->
+    <div class="slide" id="slide-7">
+      <div class="slide-header">
+        <span class="slide-tag">Weryfikacja Doświadczalna — Faza 3</span>
+        <h2>Zrzut 3: Opadanie pod Wpływem Grawitacji</h2>
+      </div>
+
+      <div class="grid-shot-slide">
+        <div class="shot-slide-frame" style="border-color: #e74c3c;">
+          <img src="screenshots/zrzut3_opadanie.png" alt="Zrzut 3: Opadanie pod grawitacją">
+        </div>
+        <div class="card" style="border-left: 4px solid #e74c3c;">
+          <h3>📉 Fizyka Zniżania i Lądowanie</h3>
+          <ul>
+            <li><strong>THROTTLE: <code>0% (Cut Off)</code></strong> — Pełne odcięcie mocy silników. Lot wyłącznie pod wpływem grawitacji.</li>
+            <li><strong>ALTITUDE: <code>6.84 m</code></strong> — Zniżanie w kierunku płyty lądowiska.</li>
+            <li><strong>VERTICAL SPEED: <code>-9.81 m/s</code></strong> — Ujemna prędkość pionowa odpowiadająca przyspieszeniu ziemskiemu $a_y = -9.81\text{ m/s}^2$.</li>
+            <li><strong>Brak sztucznego limitu:</strong> Zgodnie z wytycznymi, prędkość opadania nie jest sztucznie ograniczana do $15\text{ m/s}$, co zapewnia realistyczny spadek swobodny.</li>
+            <li><strong>Płynne przyziemienie:</strong> Przy kontakcie z gruntem ($y = 0.15\text{ m}$) następuje natychmiastowe wygaszenie prędkości do $0.00\text{ m/s}$ bez odbić.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─────────────────────────────────────────────
+         Slajd 8: Podsumowanie i Plan na Etap 2
+         ───────────────────────────────────────────── -->
+    <div class="slide" id="slide-8">
+      <div class="slide-header">
+        <span class="slide-tag">Podsumowanie i Perspektywy Rozwoju</span>
+        <h2>Wnioski z Etapu 1 i Plan na Etap 2</h2>
+      </div>
+
+      <div class="grid-2">
+        <div class="card" style="border-left: 4px solid var(--accent-green);">
+          <h3>✅ Osiągnięcia Etapu 1 (MVP)</h3>
+          <ul>
+            <li><strong>Pełna integracja 3D + GUI:</strong> Spójne połączenie Three.js, React Native i Zustand.</li>
+            <li><strong>Stabilna fizyka 1D:</strong> Realistyczny ciąg, grawitacja, kolizje z ziemią i aktywny zawis.</li>
+            <li><strong>Rozwiązanie problemów wieloplatformowości:</strong> Bezproblemowy start w Expo Go (iOS/Android) oraz w przeglądarce Web bez błędów reconcilera React 19.</li>
+          </ul>
+        </div>
+
+        <div class="card" style="border-left: 4px solid var(--accent-cyan);">
+          <h3>🎯 Plan na Etap 2 (Kolejne zajęcia)</h3>
+          <ul>
+            <li><strong>Wirtualne joysticki 2D:</strong> Zastąpienie przycisków ekranowymi gałkami analogowymi (sterowanie ciągiem i kierunkiem w czasie rzeczywistym).</li>
+            <li><strong>Fizyka 6-DOF:</strong> Dodanie dynamiki obrotowej drona — kąty pochylenia (<strong>Pitch</strong>) i przechylenia (<strong>Roll</strong>).</li>
+            <li><strong>Siatka 3D drona:</strong> Import trójwymiarowego modelu quadcoptera (format <code>.gltf / .glb</code>) z wirującymi śmigłami.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div style="text-align: center; margin-top: 25px; padding: 18px; background: rgba(0, 210, 255, 0.05); border-radius: 12px; border: 1px dashed var(--accent-cyan);">
+        <h3 style="justify-content: center; font-size: 1.35em; color: #fff;">Dziękujemy za uwagę!</h3>
+        <p style="color: var(--text-muted); font-size: 0.95em; margin-top: 6px;">
+          Danylo Mikhnytskyi (284125) • Maksym Mahaz (284115) • Grafika Komputerowa i GUI
+        </p>
+      </div>
+    </div>
+
+    <!-- Slide Navigation Footer Controls -->
+    <div class="controls">
+      <span class="slide-counter" id="counter">1 / 8</span>
+      <button class="btn" id="prevBtn" onclick="prevSlide()">◀ Wstecz</button>
+      <button class="btn" id="nextBtn" onclick="nextSlide()">Dalej ▶</button>
+      <button class="btn" onclick="window.print()" title="Drukuj lub zapisz jako PDF">🖨️ PDF</button>
+    </div>
+
+  </div>
+
+  <script>
+    let currentSlide = 1;
+    const totalSlides = 8;
+
+    function showSlide(index) {
+      if (index < 1) index = 1;
+      if (index > totalSlides) index = totalSlides;
+      currentSlide = index;
+
+      document.querySelectorAll('.slide').forEach((slide, i) => {
+        slide.classList.toggle('active', i + 1 === currentSlide);
+      });
+
+      document.getElementById('counter').innerText = `${currentSlide} / ${totalSlides}`;
+      document.getElementById('prevBtn').disabled = currentSlide === 1;
+      document.getElementById('nextBtn').disabled = currentSlide === totalSlides;
+    }
+
+    function nextSlide() {
+      showSlide(currentSlide + 1);
+    }
+
+    function prevSlide() {
+      showSlide(currentSlide - 1);
+    }
+
+    // Keyboard navigation (Arrow keys & Spacebar)
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+        nextSlide();
+      } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+        prevSlide();
+      } else if (e.key === 'Home') {
+        showSlide(1);
+      } else if (e.key === 'End') {
+        showSlide(totalSlides);
+      }
+    });
+
+    // Initialize state
+    showSlide(1);
+  </script>
+
+</body>
+</html>
